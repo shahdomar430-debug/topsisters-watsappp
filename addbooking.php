@@ -93,6 +93,33 @@ if ($conflict) {
     $stmt->bind_param("ssssssssid", $customer_name, $phone, $date, $time, $category_id, $service_name, $notes, $image, $duration, $final_price);
 
     if ($stmt->execute()) {
+        // ربط الأقسام بالأرقام
+        $numbersByCategory = [
+            1 => "+970594919652", // قسم الأظافر
+            2 => "+970594158977", // قسم البشرة
+            3 => "+970567341217"  // قسم الشعر
+        ];
+
+        $targetNumber = $numbersByCategory[$category_id] ?? null;
+
+        if ($targetNumber) {
+            $payload = [
+                "name" => $customer_name,
+                "service" => $service_name,
+                "time" => $date . " " . $time
+            ];
+
+            $options = [
+                "http" => [
+                    "header"  => "Content-Type: application/json",
+                    "method"  => "POST",
+                    "content" => json_encode($payload),
+                ]
+            ];
+            $context  = stream_context_create($options);
+            @file_get_contents("https://topsisters-watsapp.onrender.com/notify?to=" . urlencode($targetNumber), false, $context);
+        }
+
         echo json_encode(["status" => "success", "message" => "✅ تم تسجيل الحجز بالسعر: ".$final_price." ₪"]);
     } else {
         echo json_encode(["status" => "error", "message" => "❌ خطأ في حفظ الحجز: " . $conn->error]);
